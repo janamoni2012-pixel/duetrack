@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="DueTrack — personal money planner, due-date reminder and spending tracker." />
+  <title>DueTrack — Personal Money Assistant</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">D</div>
+        <div>
+          <strong>DueTrack</strong>
+          <small>Money Assistant</small>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Primary">
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="transactions">Transactions</button>
+        <button class="nav-item" data-view="reminders">Reminders</button>
+        <button class="nav-item" data-view="calendar">Money Calendar</button>
+        <button class="nav-item" data-view="insights">Insights</button>
+        <button class="nav-item" data-view="settings">Settings</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button id="installBtn" class="ghost-btn hidden">Install app</button>
+        <p>Private by default. Your data stays in this browser.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button class="menu-btn" id="menuBtn" aria-label="Toggle menu">☰</button>
+        <div>
+          <p class="eyebrow" id="todayLabel"></p>
+          <h1 id="viewTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <button id="notifyBtn" class="secondary-btn">Enable reminders</button>
+          <button id="quickAddBtn" class="primary-btn">+ Add</button>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <div class="hero-grid">
+          <article class="metric-card hero-card">
+            <span>Available balance</span>
+            <strong id="balanceMetric">₹0</strong>
+            <small id="balanceHint">Income − expenses</small>
+          </article>
+          <article class="metric-card">
+            <span>Reserved for upcoming dues</span>
+            <strong id="reservedMetric">₹0</strong>
+            <small>Next 30 days</small>
+          </article>
+          <article class="metric-card">
+            <span>Safe to spend</span>
+            <strong id="safeMetric">₹0</strong>
+            <small>Balance − upcoming dues</small>
+          </article>
+          <article class="metric-card">
+            <span>This month saved</span>
+            <strong id="savedMetric">₹0</strong>
+            <small id="savedRate">0% savings rate</small>
+          </article>
+        </div>
+
+        <div class="content-grid two-one">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">This month</p>
+                <h2>Money flow</h2>
+              </div>
+              <span class="status-pill" id="monthHealth">No data yet</span>
+            </div>
+            <canvas id="flowChart" height="230" aria-label="Income and expenses chart"></canvas>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Coming up</p>
+                <h2>Next dues</h2>
+              </div>
+              <button class="text-btn" data-jump="reminders">View all</button>
+            </div>
+            <div id="upcomingList" class="stack-list empty-state">No upcoming dues.</div>
+          </article>
+        </div>
+
+        <div class="content-grid two-one">
+          <article class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Recent activity</p>
+                <h2>Transactions</h2>
+              </div>
+              <button class="text-btn" data-jump="transactions">View all</button>
+            </div>
+            <div id="recentTransactions" class="stack-list empty-state">No transactions yet.</div>
+          </article>
+
+          <article class="panel callout">
+            <p class="eyebrow">Money check</p>
+            <h2 id="moneyCoachTitle">Ready when you are</h2>
+            <p id="moneyCoachText">Add your income, expenses and upcoming payments. DueTrack will show what is actually free to spend.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="transactionsView">
+        <div class="panel">
+          <div class="panel-head wrap">
+            <div>
+              <p class="eyebrow">Ledger</p>
+              <h2>All transactions</h2>
+            </div>
+            <div class="filters">
+              <select id="transactionFilter">
+                <option value="all">All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expenses</option>
+              </select>
+              <input id="transactionSearch" type="search" placeholder="Search transactions" />
+            </div>
+          </div>
+          <div id="transactionsTable" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <section class="view" id="remindersView">
+        <div class="summary-strip">
+          <div><span>Due in 7 days</span><strong id="due7Metric">₹0</strong></div>
+          <div><span>Due in 30 days</span><strong id="due30Metric">₹0</strong></div>
+          <div><span>Overdue</span><strong id="overdueMetric">₹0</strong></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Never lose track</p>
+              <h2>Payment reminders</h2>
+            </div>
+            <button id="addReminderBtn" class="primary-btn">+ Add reminder</button>
+          </div>
+          <div id="remindersList" class="card-list"></div>
+        </div>
+      </section>
+
+      <section class="view" id="calendarView">
+        <div class="panel">
+          <div class="panel-head">
+            <button id="prevMonth" class="icon-btn" aria-label="Previous month">←</button>
+            <div class="calendar-title">
+              <p class="eyebrow">Payment plan</p>
+              <h2 id="calendarMonthTitle"></h2>
+            </div>
+            <button id="nextMonth" class="icon-btn" aria-label="Next month">→</button>
+          </div>
+          <div class="calendar-weekdays">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+      </section>
+
+      <section class="view" id="insightsView">
+        <div class="hero-grid insights-metrics">
+          <article class="metric-card"><span>Monthly income</span><strong id="insightIncome">₹0</strong></article>
+          <article class="metric-card"><span>Monthly spending</span><strong id="insightExpense">₹0</strong></article>
+          <article class="metric-card"><span>Savings rate</span><strong id="insightSavingsRate">0%</strong></article>
+          <article class="metric-card"><span>Largest category</span><strong id="topCategory">—</strong></article>
+        </div>
+        <div class="content-grid two-one">
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">6 months</p><h2>Income vs spending</h2></div></div>
+            <canvas id="trendChart" height="250"></canvas>
+          </article>
+          <article class="panel">
+            <div class="panel-head"><div><p class="eyebrow">This month</p><h2>Spending by category</h2></div></div>
+            <div id="categoryBreakdown" class="category-breakdown"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="settingsView">
+        <div class="settings-grid">
+          <article class="panel">
+            <p class="eyebrow">Preferences</p>
+            <h2>Money settings</h2>
+            <label class="field-label">Currency
+              <select id="currencySetting">
+                <option value="INR">Indian Rupee (₹)</option>
+                <option value="USD">US Dollar ($)</option>
+                <option value="EUR">Euro (€)</option>
+                <option value="GBP">British Pound (£)</option>
+              </select>
+            </label>
+            <label class="field-label">Default reminder lead time
+              <select id="leadSetting">
+                <option value="1">1 day before</option>
+                <option value="3">3 days before</option>
+                <option value="7">7 days before</option>
+                <option value="14">14 days before</option>
+              </select>
+            </label>
+          </article>
+
+          <article class="panel">
+            <p class="eyebrow">Your data</p>
+            <h2>Backup & restore</h2>
+            <p class="muted">DueTrack stores data in your browser. Export a backup before clearing browser data or moving devices.</p>
+            <div class="button-row">
+              <button id="exportBtn" class="secondary-btn">Export backup</button>
+              <label class="secondary-btn file-label">Import backup<input id="importInput" type="file" accept="application/json" hidden /></label>
+            </div>
+            <button id="clearDataBtn" class="danger-btn">Delete all local data</button>
+          </article>
+
+          <article class="panel">
+            <p class="eyebrow">Try the product</p>
+            <h2>Demo data</h2>
+            <p class="muted">Load sample data to see dashboards, reminders and graphs. You can remove it later.</p>
+            <button id="demoBtn" class="secondary-btn">Load demo data</button>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop" role="presentation"></div>
+  <dialog id="entryModal" class="modal">
+    <form method="dialog" id="entryForm">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Add money activity</p>
+          <h2>New transaction</h2>
+        </div>
+        <button class="icon-btn close-modal" value="cancel" aria-label="Close">×</button>
+      </div>
+      <div class="segmented" id="transactionTypeSegment">
+        <button type="button" data-type="expense" class="active">Expense</button>
+        <button type="button" data-type="income">Income</button>
+      </div>
+      <input type="hidden" id="entryType" value="expense" />
+      <div class="form-grid">
+        <label>Amount<input id="entryAmount" type="number" min="0.01" step="0.01" required placeholder="1500" /></label>
+        <label>Date<input id="entryDate" type="date" required /></label>
+        <label>Category<select id="entryCategory"></select></label>
+        <label>Description<input id="entryDescription" type="text" maxlength="80" placeholder="Groceries, salary, fuel…" required /></label>
+      </div>
+      <div class="modal-actions"><button value="cancel" class="secondary-btn">Cancel</button><button type="submit" class="primary-btn">Save transaction</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="reminderModal" class="modal">
+    <form method="dialog" id="reminderForm">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Plan ahead</p>
+          <h2 id="reminderModalTitle">New reminder</h2>
+        </div>
+        <button class="icon-btn close-modal" value="cancel" aria-label="Close">×</button>
+      </div>
+      <input type="hidden" id="reminderId" />
+      <div class="form-grid">
+        <label>What is it for?<input id="reminderName" required maxlength="80" placeholder="Bike EMI" /></label>
+        <label>Amount<input id="reminderAmount" type="number" min="0" step="0.01" required placeholder="4500" /></label>
+        <label>Due date<input id="reminderDate" type="date" required /></label>
+        <label>Category
+          <select id="reminderCategory">
+            <option>EMI</option><option>Electricity</option><option>Rent</option><option>Credit Card</option><option>Subscription</option><option>Insurance</option><option>Fees</option><option>Internet</option><option>Mobile</option><option>Other</option>
+          </select>
+        </label>
+        <label>Repeat
+          <select id="reminderRepeat"><option value="none">One time</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+        </label>
+        <label>Remind me
+          <select id="reminderLead"><option value="1">1 day before</option><option value="3">3 days before</option><option value="7">7 days before</option><option value="14">14 days before</option></select>
+        </label>
+      </div>
+      <label class="notes-label">Note<textarea id="reminderNote" rows="3" maxlength="180" placeholder="Optional note"></textarea></label>
+      <div class="modal-actions"><button value="cancel" class="secondary-btn">Cancel</button><button type="submit" class="primary-btn">Save reminder</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
